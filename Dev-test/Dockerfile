@@ -1,31 +1,29 @@
-# Use a minimal base image for building
-FROM alpine:3.12 AS build
+# Use an official Ubuntu LTS image as the base image
+FROM ubuntu:20.04
+# Set the maintainer
+LABEL maintainer="John Michael <lovejohnmike@gmail.com>"
 
-# Install necessary build tools
-RUN apk add --no-cache g++
+# Update the package list and install the necessary packages
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    g++ \
+    git
 
-# Copy the source code to the container
-COPY main.cpp .
+# Create a non-root user for the application
+RUN useradd -ms /bin/bash appuser
 
-# Compile the source code
-RUN g++ -o fuel_indicator main.cpp
-
-# Use a minimal runtime image for deployment
-FROM alpine:3.12
-
-# Copy the compiled binary from the build stage
-COPY --from=build /fuel_indicator .
-
-# Set the working directory
+# Create a working directory for the application
 WORKDIR /app
 
-# Run the software as a non-root user
-RUN adduser -D myuser
-USER myuser
+# Copy the source code into the container
+COPY src/main.cpp .
+
+# Build the application
+RUN g++ -std=c++17 -o fuelindicator main.cpp
 
 # Expose the necessary ports
 EXPOSE 80
 
-# Start the software
-CMD ["./fuel_indicator"]
-
+# Run the application as the non-root user
+USER appuser
+CMD ["./fuelindicator"]
